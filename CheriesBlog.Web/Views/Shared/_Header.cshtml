@@ -1,0 +1,36 @@
+﻿<nav class="navbar navbar-expand-lg fixed-top navbar-light bg-light">
+
+    <div class="container-fluid">
+
+        <a class="navbar-brand" href="/">Cherie's Blog</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar"
+            aria-controls="offcanvasNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
+
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="offcanvasNavbarLabel">Menu</h5>
+                <button type="button" class="btn close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+
+            <div class="offcanvas-body float-right">
+                <ul class="navbar-nav mr-auto pe-3">
+                    <li class="nav-item"><a class="nav-link active" href="/">Home</a></li>
+                    @if (User?.Identity?.IsAuthenticated == true)
+                    {
+                        <li class="nav-item"><a class="nav-link" href="/Account/Logout">Logout</a></li>
+                    }
+                    else
+                    {
+                        <li class="nav-item"><a class="nav-link" href="/Account/Login">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/Account/Register">Register</a></li>
+                    }
+                    <li class="nav-item"><a class="nav-link active" href="/Home/About">About</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/Home/Contact">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>

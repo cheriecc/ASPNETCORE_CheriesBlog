@@ -1,0 +1,86 @@
+﻿@model CheriesBlog.Web.ViewModels.PostDetailsViewModel
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewData["Title"] = Model.Post.Title;
+}
+
+
+<header class="masthead" style="background-image: url('@Model.Post.ImageUrl');">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-md-10 mx-auto">
+                <div class="page-heading">
+                    <h1>@Model.Post.Title</h1>
+                    <span class="subheading">@Model.Post.SubTitle</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+<article>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-md-10 mx-auto">
+                <div>
+                    @Html.Raw(@Model.Post.Content)
+                </div>
+
+                <hr>
+                @if (User?.Identity?.IsAuthenticated == true &&
+                                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == Model.Post.UserId)
+                {
+                    <div class="clearfix">
+                        <a class="btn btn-outline-primary float-start" href="/Post/EditPost/@Model.Post.Id">Edit Post</a>
+
+                        <a class="btn btn-outline-danger float-end" href="/Post/DeletePost/@Model.Post.Id">Delete
+                            Post</a>
+                    </div>
+                }
+
+                <br>
+
+                <!--Comments-->
+
+                <h2>Comments</h2>
+                <ul class="comment-list">
+                    @foreach (var comment in Model.Post.Comments)
+                    {
+                        <li>
+                            <div class="comment-image">
+                                @* <img src="{{ comment.commenter.email|gravatar }}" alt="profile image"> *@
+                            </div>
+                            <div class="comment-text">
+                                @comment.Content
+                                <span class="date sub-text">by @comment.Commenter?.FirstName</span>
+                            </div>
+                        </li>
+                    }
+                </ul>
+
+                <br>
+                <!--comment box-->
+                @if (User?.Identity?.IsAuthenticated == true)
+                {
+                    <form method="post" asp-controller="Post" asp-action="AddComment">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="PostId" value="@Model.Post.Id" />
+                        <label for="Content">Your Comment</label>
+                        <textarea name="Content" class="form-control"></textarea>
+                        <button type="submit" class="btn btn-primary mt-2">Submit</button>
+                    </form>
+                }
+                else
+                {
+                    <p><a href="/Account/Login" class="btn btn-primary">Log in</a> to add a comment.</p>
+                }
+
+            </div>
+        </div>
+    </div>
+</article>
+
+<hr>
