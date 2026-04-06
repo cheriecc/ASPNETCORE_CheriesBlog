@@ -1,4 +1,4 @@
-using System.Text;
+using CheriesBlog.Application.Mappings;
 using CheriesBlog.Application.Services;
 using CheriesBlog.Domain.Interface;
 using CheriesBlog.Domain.Models;
@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,12 +19,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddDbContext<BlogDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
         optionsBuilder => optionsBuilder.MigrationsAssembly("CheriesBlog.Infrastructure"));
 });
 
 //Add Identity services
-builder.Services.AddIdentity<User, IdentityRole>(options =>
+builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
 {
     // Configure password settings
     options.Password.RequireDigit = true;
@@ -51,6 +53,8 @@ builder.Services.AddHttpContextAccessor();
 // Register repositories and services
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
+
+builder.Services.AddAutoMapper(cfg => {}, typeof(MappingProfile).Assembly);
 
 
 builder.Services.AddCors((options) =>
@@ -89,6 +93,7 @@ builder.Services.AddCors((options) =>
 //     });
 
 
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -117,5 +122,11 @@ app.MapControllerRoute(
 //     var context = scope.ServiceProvider.GetRequiredService<BlogDbContext>();
 //     context.Database.Migrate();
 // }
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<BlogDbContext>();
+    db.Database.EnsureCreated(); // creates all tables if they don't exist
+}
 
 app.Run();

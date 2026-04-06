@@ -40,11 +40,9 @@ public class AuthService
 
         var user = new User
         {
-            Email = userDto.Email,
-            FirstName = userDto.FirstName,
-            LastName = userDto.LastName,
             UserName = userDto.Email,
-            CreatedAt = DateTime.UtcNow
+            Email = userDto.Email,
+            Name = userDto.Name
         };
 
         return await _userManager.CreateAsync(user, userDto.Password);
@@ -52,7 +50,7 @@ public class AuthService
 
     public async Task<LogInResult> LoginUserAsync(UserLoginDto userDto)
     {
-        var user = await _userManager.FindByNameAsync(userDto.Username);
+        var user = await _userManager.FindByEmailAsync(userDto.Email);
         if (user == null)
         {
             return new LogInResult
@@ -61,7 +59,7 @@ public class AuthService
                 FailureReason = "The username does not exist."
             };
         }
-        var result = await _signInManager.PasswordSignInAsync(userDto.Username, userDto.Password, isPersistent: false, lockoutOnFailure: false);
+        var result = await _signInManager.PasswordSignInAsync(userDto.Email, userDto.Password, isPersistent: false, lockoutOnFailure: false);
         if (result.Succeeded)
         {
             return new LogInResult { Succeeded = true };

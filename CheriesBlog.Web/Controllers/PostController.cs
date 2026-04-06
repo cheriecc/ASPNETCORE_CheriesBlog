@@ -12,19 +12,16 @@ namespace CheriesBlog.Web.Controllers
     {
         private readonly IPostRepository _postRepository;
         private readonly IMapper _mapper;
-        public PostController(IPostRepository postRepository)
+        public PostController(IPostRepository postRepository, IMapper mapper)
         {
             _postRepository = postRepository;
-            _mapper = new Mapper(new MapperConfiguration(cfg =>
-            {
-                cfg.CreateMap<Post, PostToEditDto>().ReverseMap();
-            }));
+            _mapper = mapper;
         }
 
         [HttpGet]
         public async Task<ActionResult> Details(int id)
         {
-            var post = await _postRepository.GetPostByIdAsync(id);
+            BlogPost post = await _postRepository.GetPostByIdAsync(id);
             if (post == null)
             {
                 return NotFound();

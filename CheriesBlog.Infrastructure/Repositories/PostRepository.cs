@@ -21,9 +21,9 @@ public class PostRepository : IPostRepository
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<Post> GetPostByIdAsync(int id)
+    public async Task<BlogPost> GetPostByIdAsync(int id)
     {
-        var post = await _dbContext.Posts.Include(p => p.Author).Include(p => p.Comments).FirstOrDefaultAsync(p => p.Id == id);
+        var post = await _dbContext.BlogPosts.Include(p => p.Author).Include(p => p.Comments).FirstOrDefaultAsync(p => p.Id == id);
         if (post == null)
         {
             throw new InvalidOperationException($"Post with ID {id} was not found.");
@@ -32,9 +32,9 @@ public class PostRepository : IPostRepository
 
     }
 
-    public async Task<IEnumerable<Post>> GetAllPostsAsync()
+    public async Task<IEnumerable<BlogPost>> GetAllPostsAsync()
     {
-        var posts = await _dbContext.Posts.Include(p => p.Author).Include(p => p.Comments).ToListAsync();
+        var posts = await _dbContext.BlogPosts.Include(p => p.Author).Include(p => p.Comments).ToListAsync();
         // if (posts == null || posts.Count == 0)
         // {
         //     throw new InvalidOperationException("No posts found.");
@@ -42,11 +42,11 @@ public class PostRepository : IPostRepository
         return posts;
     }
 
-    public async Task<IEnumerable<Post>> GetPostsByUserIdAsync()
+    public async Task<IEnumerable<BlogPost>> GetPostsByUserIdAsync()
     {
         string UserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? throw new InvalidOperationException("User is not authenticated.");
-        var posts = await _dbContext.Posts.Include(p => p.Author).Include(p => p.Comments).Where(p => p.UserId == UserId).ToListAsync();
+        var posts = await _dbContext.BlogPosts.Include(p => p.Author).Include(p => p.Comments).Where(p => p.AuthorId == Convert.ToInt32(UserId)).ToListAsync();
         if (posts == null || posts.Count == 0)
         {
             throw new InvalidOperationException($"No posts found for user with ID {UserId}.");
@@ -55,17 +55,21 @@ public class PostRepository : IPostRepository
     }
     public async Task<int> AddPostAsync(PostToAddDto postDto)
     {
-        Post post = new()
+        string userIdString = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier) 
+            ?? throw new InvalidOperationException("User is not authenticated.");
+        int? userId = int.TryParse(userIdString, out var parsedUserId) ? parsedUserId : null;
+
+        BlogPost post = new()
         {
             Title = postDto.Title,
             Content = postDto.Content,
-            CreatedAt = DateTime.UtcNow,
-            SubTitle = postDto.SubTitle,
+            Date = DateTime.UtcNow.ToString("yyyy-MM-dd"),
+            Subtitle = postDto.Subtitle,
             ImageUrl = postDto.ImageUrl,
-            UserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-                         ?? throw new InvalidOperationException("User is not authenticated."),
+            AuthorId = parsedUserId
+                         ,
         };
-        await _dbContext.Posts.AddAsync(post);
+        await _dbContext.BlogPosts.AddAsync(post);
         await _dbContext.SaveChangesAsync();
         return post.Id;
     }
@@ -73,45 +77,43 @@ public class PostRepository : IPostRepository
     public async Task<bool> UpdatePostAsync(PostToEditDto postDto)
     {
         // Retrieve the current user's ID from the claims
-        var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+        string userIdString = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? throw new InvalidOperationException("User is not authenticated.");
+        int? userId = int.TryParse(userIdString, out var parsedUserId) ? parsedUserId : null;
 
         // Find the post by ID
-        var post = await _dbContext.Posts.FirstOrDefaultAsync(p => p.Id == postDto.Id);
-
-        if (post == null)
-        {
-            throw new InvalidOperationException($"Post with ID {postDto.Id} was not found.");
-        }
+        BlogPost post = await _dbContext.BlogPosts.FirstOrDefaultAsync(p => p.Id == postDto.Id)
+            ?? throw new InvalidOperationException($"Post with ID {postDto.Id} was not found.");
 
         // Ensure the post belongs to the current user
-        if (post.UserId != userId)
+        if (post.AuthorId != parsedUserId)
         {
             throw new UnauthorizedAccessException("You are not authorized to edit this post.");
         }
 
         // Update the post properties
         post.Title = postDto.Title;
-        post.SubTitle = postDto.SubTitle;
+        post.Subtitle = postDto.Subtitle;
         post.Content = postDto.Content;
         post.ImageUrl = postDto.ImageUrl;
-        post.UpdatedAt = DateTime.UtcNow;
+        //post.UpdatedAt = DateTime.UtcNow;
+
         // Save changes to the database
-        _dbContext.Posts.Update(post);
+        _dbContext.BlogPosts.Update(post);
         int result = await _dbContext.SaveChangesAsync();
         return result > 0;
     }
     public async Task<bool> DeletePostAsync(int id)
     {
-        var post = await _dbContext.Posts.FirstOrDefaultAsync(p => p.Id == id)
+        var post = await _dbContext.BlogPosts.FirstOrDefaultAsync(p => p.Id == id)
             ?? throw new InvalidOperationException($"Post with ID {id} was not found.");
-        _dbContext.Posts.Remove(post);
+        _dbContext.BlogPosts.Remove(post);
         int result = await _dbContext.SaveChangesAsync();
         return result > 0;
     }
     public async Task<IEnumerable<Comment>> GetCommentsByPostIdAsync(int postId)
     {
-        var comments = await _dbContext.Comments.Where(c => c.PostId == postId).ToListAsync();
+        List<Comment> comments = await _dbContext.Comments.Where(c => c.PostId == postId).ToListAsync();
         if (comments == null || comments.Count == 0)
         {
             throw new InvalidOperationException($"No comments found for post with ID {postId}.");
@@ -120,12 +122,15 @@ public class PostRepository : IPostRepository
     }
     public async Task<bool> AddCommentToPostAsync(CommentDto comment)
     {
+        // Retrieve the current user's ID from the claims
+        string userIdString = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new InvalidOperationException("User is not authenticated.");
+        int? userId = int.TryParse(userIdString, out var parsedUserId) ? parsedUserId : null;
+
         var newComment = new Comment
         {
-            Content = comment.Content,
-            CreatedAt = DateTime.UtcNow,
-            CommenterId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-                     ?? throw new InvalidOperationException("User is not authenticated."),
+            Text = comment.Text,
+            CommenterId = parsedUserId,
             PostId = comment.PostId,
         };
         await _dbContext.Comments.AddAsync(newComment);
@@ -134,13 +139,19 @@ public class PostRepository : IPostRepository
     }
     public async Task<bool> DeleteCommentFromPostAsync(int commentId)
     {
-        var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+        // Retrieve the current user's ID from the claims
+        string userIdString = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? throw new InvalidOperationException("User is not authenticated.");
+        int? userId = int.TryParse(userIdString, out var parsedUserId) ? parsedUserId : null;
+
+        // Retrieve the comment
         var comment = await _dbContext.Comments.FirstOrDefaultAsync(c => c.Id == commentId)
             ?? throw new InvalidOperationException($"Comment with ID {commentId} was not found.");
-        var post = await _dbContext.Posts.FirstOrDefaultAsync(p => p.Id == comment.PostId)
+        
+        // Retrieve the BlogPost
+        var post = await _dbContext.BlogPosts.FirstOrDefaultAsync(p => p.Id == comment.PostId)
             ?? throw new InvalidOperationException($"Post with ID {comment.PostId} was not found.");
-        if (comment.CommenterId != userId && comment.CommenterId != post.UserId)
+        if (comment.CommenterId != userId && comment.CommenterId != post.AuthorId)
         {
             throw new UnauthorizedAccessException("You are not authorized to delete this comment.");
         }

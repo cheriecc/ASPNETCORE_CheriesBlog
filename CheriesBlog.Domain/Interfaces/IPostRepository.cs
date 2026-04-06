@@ -7,9 +7,9 @@ namespace CheriesBlog.Domain.Interface;
 public interface IPostRepository
 {
 
-    Task<Post> GetPostByIdAsync(int id);
-    Task<IEnumerable<Post>> GetAllPostsAsync();
-    Task<IEnumerable<Post>> GetPostsByUserIdAsync();
+    Task<BlogPost> GetPostByIdAsync(int id);
+    Task<IEnumerable<BlogPost>> GetAllPostsAsync();
+    Task<IEnumerable<BlogPost>> GetPostsByUserIdAsync();
     Task<int> AddPostAsync(PostToAddDto post);
     Task<bool> UpdatePostAsync(PostToEditDto post);
     Task<bool> DeletePostAsync(int id);

@@ -29,7 +29,7 @@
 <form method="post" asp-action="Register" asp-controller="Account">
     @Html.AntiForgeryToken()
     <div class="form-group">
-        <label for="username">Username</label>
+        <label for="email">Email</label>
         @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
     </div>
     <div class="form-group">
@@ -41,12 +41,8 @@
         @Html.PasswordFor(m => m.PasswordConfirmation, new { @class = "form-control" })
     </div>
     <div class="form-group">
-        <label for="username">First Name</label>
-        @Html.TextBoxFor(m => m.FirstName, new { @class = "form-control" })
-    </div>
-    <div class="form-group">
-        <label for="username">Last Name</label>
-        @Html.TextBoxFor(m => m.LastName, new { @class = "form-control" })
+        <label for="username">Name</label>
+        @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })
     </div>
     <button type="submit" class="btn btn-primary">Register</button>
     <a href="/Account/Login" class="btn btn-primary">Already have an account? Login</a>

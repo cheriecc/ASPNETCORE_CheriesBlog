@@ -41,14 +41,14 @@ namespace CheriesBlog.Web.Controllers
             var result = await _authService.LoginUserAsync(userDto);
             if (result.Succeeded)
             {
-                var user = await _authService.GetUserByEmailAsync(userDto.Username);
+                var user = await _authService.GetUserByEmailAsync(userDto.Email);
 
                 if (user == null)
                 {
                     return Unauthorized(new { message = "User does not exist." });
                 }
 
-                var token = _authService.GenerateJwtToken(user.Id);
+                var token = _authService.GenerateJwtToken(user.Id.ToString());
                 return Ok(token);
             }
             if (result.IsLockedOut)

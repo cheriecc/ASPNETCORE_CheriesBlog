@@ -1,60 +1,64 @@
-using System;
 using CheriesBlog.Domain.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace CheriesBlog.Infrastructure.Data;
 
-public class BlogDbContext : IdentityDbContext<User>
+public class BlogDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 {
     public BlogDbContext(DbContextOptions<BlogDbContext> options) : base(options)
     {
     }
-    public DbSet<Post> Posts { get; set; }
+    public DbSet<BlogPost> BlogPosts { get; set; }
     public DbSet<Comment> Comments { get; set; }
+    public DbSet<Message> Messages { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.HasDefaultSchema("CheriesBlog");
-        // Configure the User entity
-        modelBuilder.Entity<User>()
-            .HasKey(u => u.Id);
-        modelBuilder.Entity<User>()
-            .HasMany(u => u.Posts)
-            .WithOne(p => p.Author)
-            .HasForeignKey(p => p.UserId)
-            .OnDelete(DeleteBehavior.Cascade); // Allow cascading deletes for posts when a user is deleted
-        modelBuilder.Entity<User>()
-            .HasMany(u => u.Comments)
-            .WithOne(c => c.Commenter)
-            .HasForeignKey(c => c.CommenterId)
-            .OnDelete(DeleteBehavior.Cascade); // Allow cascading deletes for comments when a user is deleted
 
-        //Configure the Post entity
-        modelBuilder.Entity<Post>()
-            .HasKey(p => p.Id);
-        // modelBuilder.Entity<Post>()
-        //     .HasMany(p => p.Comments)
-        //     .WithOne(c => c.Post)
-        //     .HasForeignKey(c => c.PostId)
-        //     .OnDelete(DeleteBehavior.Cascade); // Allow cascading deletes for comments when a post is deleted
+        // Map Identity tables to your existing table names
+        modelBuilder.Entity<User>().ToTable("user_pool");
+        modelBuilder.Entity<IdentityRole<int>>().ToTable("roles");
+        modelBuilder.Entity<IdentityUserRole<int>>().ToTable("user_roles");
+        modelBuilder.Entity<IdentityUserClaim<int>>().ToTable("user_claims");
+        modelBuilder.Entity<IdentityUserLogin<int>>().ToTable("user_logins");
+        modelBuilder.Entity<IdentityUserToken<int>>().ToTable("user_tokens");
+        modelBuilder.Entity<IdentityRoleClaim<int>>().ToTable("role_claims");
 
-        // Configure the Comment entity
+        // User -> BlogPosts (one-to-many)
+        modelBuilder.Entity<BlogPost>()
+            .HasOne(bp => bp.Author)
+            .WithMany(u => u.Posts)
+            .HasForeignKey(bp => bp.AuthorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // BlogPost -> Comments (one-to-many)
         modelBuilder.Entity<Comment>()
-        .HasKey(c => c.Id);
-        // modelBuilder.Entity<Comment>()
-        //     .HasOne(c => c.Post)
-        //     .WithMany(p => p.Comments)
-        //     .HasForeignKey(c => c.PostId)
-        //     .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes for comments when a post is deleted
+            .HasOne(c => c.SubjectPost)
+            .WithMany(bp => bp.Comments)
+            .HasForeignKey(c => c.PostId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // User -> Comments (one-to-many)
         modelBuilder.Entity<Comment>()
             .HasOne(c => c.Commenter)
             .WithMany(u => u.Comments)
             .HasForeignKey(c => c.CommenterId)
-            .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes for users
+            .OnDelete(DeleteBehavior.Restrict);
 
+        // Unique constraint on BlogPost.Title (mirrors unique=True)
+        modelBuilder.Entity<BlogPost>()
+            .HasIndex(bp => bp.Title)
+            .IsUnique();
+
+        // Unique constraint on User.Email (mirrors unique=True)
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
     }
-
 
 
 }

@@ -39,7 +39,7 @@
                             <h2 class="post-title">@post.Title</h2>
                         </a>
                         <h3 class="post-subtitle">@post.SubTitle</h3>
-                        <p class="post-reference">Posted by @(post.Author?.FirstName ?? "Unknown Author") on
+                        <p class="post-reference">Posted by @(post.Author?.Name ?? "Unknown Author") on
                             @post.CreatedAt.ToString("MMMM dd, yyyy")
                             @if (User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == post.UserId)
                             {

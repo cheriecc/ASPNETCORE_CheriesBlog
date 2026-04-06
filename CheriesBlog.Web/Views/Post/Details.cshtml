@@ -13,7 +13,7 @@
             <div class="col-lg-8 col-md-10 mx-auto">
                 <div class="page-heading">
                     <h1>@Model.Post.Title</h1>
-                    <span class="subheading">@Model.Post.SubTitle</span>
+                    <span class="subheading">@Model.Post.Subtitle</span>
                 </div>
             </div>
         </div>
@@ -31,7 +31,7 @@
 
                 <hr>
                 @if (User?.Identity?.IsAuthenticated == true &&
-                                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == Model.Post.UserId)
+                                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == Model.Post.AuthorId.ToString())
                 {
                     <div class="clearfix">
                         <a class="btn btn-outline-primary float-start" href="/Post/EditPost/@Model.Post.Id">Edit Post</a>
@@ -54,8 +54,8 @@
                                 @* <img src="{{ comment.commenter.email|gravatar }}" alt="profile image"> *@
                             </div>
                             <div class="comment-text">
-                                @comment.Content
-                                <span class="date sub-text">by @comment.Commenter?.FirstName</span>
+                                @comment.Text
+                                <span class="date sub-text">by @comment.Commenter?.Name</span>
                             </div>
                         </li>
                     }

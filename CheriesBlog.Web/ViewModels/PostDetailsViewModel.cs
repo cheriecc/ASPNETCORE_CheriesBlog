@@ -6,6 +6,6 @@ namespace CheriesBlog.Web.ViewModels;
 
 public class PostDetailsViewModel
 {
-    public required Post Post { get; set; }
+    public required BlogPost Post { get; set; }
     public required CommentDto CommentDto { get; set; }
 }
